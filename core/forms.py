@@ -2,23 +2,30 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import TimesheetEntry, CustomUser, Client
 
+
 class TimesheetEntryForm(forms.ModelForm):
     class Meta:
         model = TimesheetEntry
         fields = [
-            'client_name', 'client_id',
+            'client',
             'project_name', 'project_id',
-            'service_provider', 'service_type',
-            'phase', 'billing_consultant',
-            'date_of_service', 'billing_time',
-            'description', 'comments',
+            'service_type', 'phase', 'task_id',
+            'billing_consultant',
+            'date_of_service', 'duration',
+            'description', 'remarks',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
-            'comments': forms.Textarea(attrs={'rows': 2}),
+            'remarks': forms.Textarea(attrs={'rows': 2}),
             'date_of_service': forms.DateInput(attrs={'type': 'date'}),
-            'billing_time': forms.TimeInput(attrs={'type': 'time'}),
+            'duration': forms.TimeInput(attrs={'type': 'time'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter consultants in billing_consultant dropdown
+        self.fields['billing_consultant'].queryset = CustomUser.objects.filter(role='CONSULTANT')
+
 
 class CustomUserCreationForm(UserCreationForm):
     clients = forms.ModelMultipleChoiceField(
@@ -41,6 +48,7 @@ class CustomUserCreationForm(UserCreationForm):
         if role != 'CLIENT' and clients:
             raise forms.ValidationError("Only client users can be associated with clients.")
         return cleaned_data
+
 
 class CustomUserChangeForm(UserChangeForm):
     clients = forms.ModelMultipleChoiceField(

@@ -1,15 +1,19 @@
 <h2>Login</h2>
-<form method="post">
-    {% csrf_token %}
-    <label>Email:</label>
-    <input type="text" name="email" required><br><br>
-    <label>Password:</label>
-    <input type="password" name="password" required><br><br>
-    <button type="submit">Login</button>
-</form>
 
 {% if messages %}
-{% for message in messages %}
-<p style="color: red">{{ message }}</p>
-{% endfor %}
+  {% for message in messages %}
+    <p style="color: red;">{{ message }}</p>
+  {% endfor %}
 {% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <label for="email">Email:</label><br>
+  <input type="email" id="email" name="email" required autofocus><br><br>
+
+  <label for="password">Password:</label><br>
+  <input type="password" id="password" name="password" required><br><br>
+
+  <button type="submit">Login</button>
+</form>
