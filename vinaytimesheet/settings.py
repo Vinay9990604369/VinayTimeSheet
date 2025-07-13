@@ -126,3 +126,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # vinaytimesheet/settings.py
 AUTH_USER_MODEL = 'core.CustomUser'
+
+LOGIN_URL = '/login/'
