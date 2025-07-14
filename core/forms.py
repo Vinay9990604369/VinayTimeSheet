@@ -4,26 +4,64 @@ from .models import TimesheetEntry, CustomUser, Client
 
 
 class TimesheetEntryForm(forms.ModelForm):
+    # Read-only fields derived from related models
+    client_id = forms.CharField(label="Client ID", required=False, disabled=True)
+    project_id = forms.CharField(label="Project ID", required=False, disabled=True)
+    service_provider = forms.CharField(label="Service Provider", required=False, disabled=True)
+    service_type = forms.CharField(label="Service Type", required=False, disabled=True)
+    last_updated = forms.DateTimeField(label="Last Updated", required=False, disabled=True)
+
     class Meta:
         model = TimesheetEntry
         fields = [
             'client',
-            'project_name', 'project_id',
-            'service_type', 'phase', 'task_id',
+            'client_id',
+            'project',
+            'project_id',
+            'service_provider',
+            'service_type',
+            'phase',
             'billing_consultant',
-            'date_of_service', 'duration',
-            'description', 'remarks',
+            'date_of_service',
+            'billing_time_duration',
+            'work_description',
+            'comments',
+            'last_updated',
         ]
+
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
-            'remarks': forms.Textarea(attrs={'rows': 2}),
-            'date_of_service': forms.DateInput(attrs={'type': 'date'}),
-            'duration': forms.TimeInput(attrs={'type': 'time'}),
+            'client': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'project': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'phase': forms.Select(attrs={'disabled': True}),
+            'billing_consultant': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'date_of_service': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
+            'billing_time_duration': forms.TimeInput(attrs={'type': 'time'}),
+            'work_description': forms.Textarea(attrs={'rows': 3}),
+            'comments': forms.Textarea(attrs={'rows': 2}),
+            'last_updated': forms.DateTimeInput(attrs={'readonly': 'readonly'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filter consultants in billing_consultant dropdown
+
+        if self.instance and self.instance.pk:
+            # Populate read-only virtual fields from relationships
+            self.fields['client_id'].initial = self.instance.client.client_id
+            self.fields['project_id'].initial = self.instance.project.project_id
+            self.fields['service_provider'].initial = self.instance.project.service_provider
+            self.fields['service_type'].initial = self.instance.project.service_type
+            self.fields['last_updated'].initial = self.instance.last_updated
+
+        # Disable all read-only fields
+        readonly_fields = [
+            'client', 'client_id', 'project', 'project_id',
+            'service_provider', 'service_type', 'phase',
+            'billing_consultant', 'date_of_service', 'last_updated'
+        ]
+        for field in readonly_fields:
+            self.fields[field].disabled = True
+
+        # Filter consultants in billing_consultant dropdown (useful in admin panel)
         self.fields['billing_consultant'].queryset = CustomUser.objects.filter(role='CONSULTANT')
 
 

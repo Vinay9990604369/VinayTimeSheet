@@ -56,11 +56,23 @@
         input, select, textarea {
             padding: 0.4rem;
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
             margin-bottom: 1rem;
             border-radius: 3px;
             border: 1px solid #ccc;
             font-size: 1rem;
+        }
+        .readonly {
+            background-color: #eee;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .filter-form select {
+            max-width: 200px;
         }
     </style>
 </head>
@@ -93,7 +105,6 @@
     {% endif %}
 
     {% block content %}
-    <!-- Content will be injected here -->
     {% endblock %}
 </main>
 

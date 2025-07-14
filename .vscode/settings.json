@@ -1,5 +1,18 @@
 {
   "python.pythonPath": "python3",
   "python.formatting.provider": "autopep8",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "."
+  ],
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/env": true
+  }
 }

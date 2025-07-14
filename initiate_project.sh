@@ -13,15 +13,12 @@ echo "Activating virtual environment..."
 source env/bin/activate
 
 # Upgrade pip
+echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Install/update dependencies from requirements.txt (without torch)
+# Install/update dependencies from requirements.txt
 echo "Installing/updating requirements..."
 pip install -r requirements.txt
-
-# Install PyTorch CPU version separately using official wheels URL
-echo "Installing PyTorch CPU version..."
-pip install torch==2.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 # Apply Django migrations
 echo "Applying database migrations..."

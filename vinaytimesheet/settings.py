@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,6 +10,7 @@ SECRET_KEY = "django-insecure-d2qffoh^u^vswv@hc(yn-=#c-wedko-c_n_dg#)^h#t9a-2or5
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -40,7 +40,7 @@ ROOT_URLCONF = "vinaytimesheet.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "core" / "templates"],  # Important: explicitly add templates path
+        "DIRS": [BASE_DIR / "core" / "templates"],  # explicitly added templates path
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -55,6 +55,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "vinaytimesheet.wsgi.application"
 
+
 # Database
 DATABASES = {
     "default": {
@@ -62,6 +63,7 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -71,22 +73,34 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+
 # Internationalization
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "UTC"  # Change if you want your local timezone e.g. "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-# Static files
-STATIC_URL = "static/"
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "core" / "static",  # Add this if you have static assets in core/static/
+]
+
 
 # Custom user model
-AUTH_USER_MODEL = 'core.CustomUser'
+AUTH_USER_MODEL = "core.CustomUser"
 
-# Redirects
-LOGIN_URL = '/login/'     # for @login_required
-LOGIN_REDIRECT_URL = '/'  # can customize
-LOGOUT_REDIRECT_URL = '/login/'
 
-# Default primary key
+# Redirect URLs for login/logout
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/"  # Can customize later based on your views
+LOGOUT_REDIRECT_URL = "/login/"
+
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Email backend for development (prints emails to console)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

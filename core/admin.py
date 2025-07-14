@@ -3,13 +3,9 @@ from django.contrib.auth.admin import UserAdmin
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import CustomUser, Client
+from .models import CustomUser, Client, Project, TimesheetEntry
 
 class CustomUserCreationForm(forms.ModelForm):
-    """
-    Custom form for creating users that require
-    client association if role = CLIENT.
-    """
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'role', 'clients', 'password')
@@ -27,14 +23,12 @@ class CustomUserCreationForm(forms.ModelForm):
 
         if role == 'CLIENT' and (not clients or clients.count() == 0):
             raise ValidationError("Client users must be associated with at least one client.")
+        if role != 'CLIENT' and clients:
+            raise ValidationError("Only client users can be associated with clients.")
         return cleaned_data
 
 
 class CustomUserChangeForm(forms.ModelForm):
-    """
-    Custom form for changing users that require
-    client association if role = CLIENT.
-    """
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'role', 'clients', 'is_active', 'is_staff')
@@ -52,6 +46,8 @@ class CustomUserChangeForm(forms.ModelForm):
 
         if role == 'CLIENT' and (not clients or clients.count() == 0):
             raise ValidationError("Client users must be associated with at least one client.")
+        if role != 'CLIENT' and clients:
+            raise ValidationError("Only client users can be associated with clients.")
         return cleaned_data
 
 
@@ -64,42 +60,29 @@ class CustomUserAdmin(UserAdmin):
     list_display = ['username', 'email', 'role', 'is_staff', 'is_active']
     list_filter = ['role', 'is_staff', 'is_active']
 
-    # Show 'clients' field only for users with role 'CLIENT'
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
-        # If adding a new user
         if obj is None:
             return fieldsets + (
                 (None, {'fields': ('role', 'clients')}),
             )
-        # For existing user
         if obj.role == 'CLIENT':
             return fieldsets + (
                 (None, {'fields': ('role', 'clients')}),
             )
         else:
-            # Exclude clients for other roles
             return fieldsets + (
                 (None, {'fields': ('role',)}),
             )
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-
-        # Limit clients field visibility based on role in form
         if obj is not None:
             if obj.role == 'CLIENT':
                 form.base_fields['clients'].queryset = Client.objects.all()
                 form.base_fields['clients'].required = True
             else:
-                # Remove clients field for non-client users
                 form.base_fields.pop('clients', None)
-        else:
-            # For new user, clients required only if role = CLIENT
-            # This is handled in the clean() method of forms
-
-            pass
-
         return form
 
 
@@ -107,3 +90,39 @@ class CustomUserAdmin(UserAdmin):
 class ClientAdmin(admin.ModelAdmin):
     list_display = ['company_name', 'address']
     search_fields = ['company_name']
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ['name', 'client', 'project_id']
+    list_filter = ['client']
+    search_fields = ['name', 'project_id']
+
+
+class TimesheetEntryAdminForm(forms.ModelForm):
+    class Meta:
+        model = TimesheetEntry
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any additional validation here if needed
+        return cleaned_data
+
+
+@admin.register(TimesheetEntry)
+class TimesheetEntryAdmin(admin.ModelAdmin):
+    form = TimesheetEntryAdminForm
+
+    list_display = [
+        'client', 'project', 'service_provider', 'service_type',
+        'phase', 'billing_consultant', 'date_of_service',
+        'billing_time_duration', 'last_updated'
+    ]
+    list_filter = ['client', 'project', 'billing_consultant', 'date_of_service']
+    search_fields = ['client__company_name', 'project__name', 'service_provider']
+
+    readonly_fields = [
+        'client', 'project', 'service_provider', 'service_type',
+        'phase', 'billing_consultant', 'date_of_service', 'last_updated'
+    ]
