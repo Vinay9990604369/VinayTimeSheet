@@ -1,50 +1,110 @@
-from django import forms
-from .models import TimesheetEntry, CustomUser, Client, Project
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.core.exceptions import ValidationError
 
-class TimesheetEntryForm(forms.ModelForm):
-    class Meta:
-        model = TimesheetEntry
-        fields = [
-            # Show all fields but some will be readonly in the form
-            'client',
-            'project',
-            'service_provider',
-            'service_type',
-            'phase',
-            'billing_consultant',
-            'date_of_service',
-            'last_updated',
-            'billing_time_duration',
-            'work_description',
-            'comments',
+
+class Client(models.Model):
+    name = models.CharField(max_length=255, unique=True)  # Client Name
+    client_id = models.CharField(max_length=50, unique=True)  # Client_ID
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.client_id})"
+
+
+class Project(models.Model):
+    name = models.CharField(max_length=255)  # Project Name
+    project_id = models.CharField(max_length=100, unique=True)  # Project_ID
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
+    service_provider = models.CharField(max_length=255)  # Service_Provider
+    service_type = models.CharField(max_length=100)  # Service_Type
+
+    def __str__(self):
+        return f"{self.name} ({self.project_id})"
+
+
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = [
+        ('ADMIN', 'Admin'),
+        ('CONSULTANT', 'Billing Consultant'),
+        ('CLIENT', 'Client'),
+    ]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CONSULTANT')
+
+    clients = models.ManyToManyField(
+        Client,
+        blank=True,
+        related_name='client_users',
+        help_text="Only applicable for users with the 'Client' role."
+    )
+
+    def clean(self):
+        if self.role == 'CLIENT' and self.clients.count() == 0:
+            raise ValidationError("Client users must be associated with at least one client.")
+        if self.role != 'CLIENT' and self.clients.exists():
+            raise ValidationError("Only client users can be associated with clients.")
+
+    def __str__(self):
+        return self.username
+
+
+class TimesheetEntry(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='timesheet_entries')  # Client (FK)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='timesheet_entries')  # Project (FK)
+
+    phase = models.CharField(
+        max_length=50,
+        choices=[
+            ('Discovery', 'Discovery'),
+            ('Prepare', 'Prepare'),
+            ('Explore', 'Explore'),
+            ('Realise', 'Realise'),
+            ('Deploy', 'Deploy'),
+            ('Run', 'Run'),
         ]
-        widgets = {
-            'client': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'project': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'service_provider': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'service_type': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'phase': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'billing_consultant': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'date_of_service': forms.DateInput(attrs={'readonly': 'readonly', 'type': 'date'}),
-            'last_updated': forms.DateTimeInput(attrs={'readonly': 'readonly', 'type': 'datetime'}),
-            'billing_time_duration': forms.NumberInput(attrs={'step': '0.1', 'min': '0'}),
-            'work_description': forms.Textarea(attrs={'rows': 3}),
-            'comments': forms.Textarea(attrs={'rows': 2}),
-        }
+    )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    billing_consultant = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'CONSULTANT'},
+        related_name='timesheet_entries'
+    )
 
-        # Disable the readonly fields so user cannot change them
-        readonly_fields = [
-            'client', 'project', 'service_provider', 'service_type',
-            'phase', 'billing_consultant', 'date_of_service', 'last_updated'
-        ]
-        for field_name in readonly_fields:
-            if field_name in self.fields:
-                self.fields[field_name].disabled = True
+    date_of_service = models.DateField()  # Date_of_Service
+    billing_time_duration = models.DurationField(help_text="Format: HH:MM:SS")  # Billing_Time_Duration
+    work_description = models.TextField()  # Work_Description
+    comments = models.TextField(blank=True, null=True)  # Comments
+    last_updated = models.DateTimeField(auto_now=True)  # Last_Updated
 
-        # Limit billing_consultant queryset to users with role 'CONSULTANT' if editable (probably not editable here)
-        if 'billing_consultant' in self.fields:
-            self.fields['billing_consultant'].queryset = CustomUser.objects.filter(role='CONSULTANT')
+    def __str__(self):
+        return f"{self.project.name} - {self.billing_consultant.username} - {self.date_of_service}"
 
+    # Read-only computed properties
+    @property
+    def client_name(self):
+        return self.client.name
+
+    @property
+    def client_id(self):
+        return self.client.client_id
+
+    @property
+    def project_name(self):
+        return self.project.name
+
+    @property
+    def project_id(self):
+        return self.project.project_id
+
+    @property
+    def service_provider(self):
+        return self.project.service_provider
+
+    @property
+    def service_type(self):
+        return self.project.service_type
+
+    @property
+    def consultant_name(self):
+        return self.billing_consultant.get_full_name() or self.billing_consultant.username

@@ -1,6 +1,12 @@
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 from django.db import transaction
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+from .models import Client, Project, TimesheetEntry
+
 
 @login_required
 def timesheet_entry(request):
@@ -57,11 +63,7 @@ def timesheet_entry(request):
                             client_id=selected_client_id,
                             project_id=selected_project_id,
                             date_of_service=day_date,
-                            # For these fields, you can customize the defaults or leave blank
-                            service_provider="Auto-filled or default",
-                            service_type="Auto-filled or default",
-                            phase="Auto-filled or default",
-                            last_updated=datetime.now(),
+                            # autopopulated fields are properties on model, no need to set here
                         )
 
             # Refresh the entries queryset after creation
@@ -97,10 +99,9 @@ def timesheet_entry(request):
                         continue
 
                     # Update the entry fields
-                    entry.duration = duration_float
-                    entry.description = description_val
-                    entry.remarks = remarks_val
-                    entry.last_updated = datetime.now()
+                    entry.billing_time_duration = timedelta(hours=duration_float)
+                    entry.work_description = description_val
+                    entry.comments = remarks_val
                     entry.save()
 
                 if not any_error:
@@ -122,3 +123,24 @@ def timesheet_entry(request):
     }
 
     return render(request, 'core/timesheet_entry.html', context)
+
+
+@login_required
+def admin_dashboard(request):
+    # Customize context as needed for your admin dashboard
+    context = {}
+    return render(request, 'core/admin_dashboard.html', context)
+
+
+@login_required
+def consultant_dashboard(request):
+    # Customize context as needed for your consultant dashboard
+    context = {}
+    return render(request, 'core/consultant_dashboard.html', context)
+
+
+@login_required
+def client_dashboard(request):
+    # Customize context as needed for your client dashboard
+    context = {}
+    return render(request, 'core/client_dashboard.html', context)

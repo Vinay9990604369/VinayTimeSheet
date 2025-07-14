@@ -88,8 +88,9 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['company_name', 'address']
-    search_fields = ['company_name']
+    # Change 'name' to your actual client model's field name for company
+    list_display = ['name', 'address']
+    search_fields = ['name']
 
 
 @admin.register(Project)
@@ -120,7 +121,7 @@ class TimesheetEntryAdmin(admin.ModelAdmin):
         'billing_time_duration', 'last_updated'
     ]
     list_filter = ['client', 'project', 'billing_consultant', 'date_of_service']
-    search_fields = ['client__company_name', 'project__name', 'service_provider']
+    search_fields = ['client__name', 'project__name', 'service_provider']
 
     readonly_fields = [
         'client', 'project', 'service_provider', 'service_type',
