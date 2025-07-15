@@ -2,10 +2,12 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import TimesheetEntry, CustomUser, Client
 
-# Define a reusable CSS class string for form inputs
+# Reusable CSS class for consistent styling
 FORM_CONTROL_CLASS = 'form-control'
 
+
 class TimesheetEntryForm(forms.ModelForm):
+    # Additional readonly fields to show related info
     client_id = forms.CharField(label="Client ID", required=False, disabled=True)
     project_id = forms.CharField(label="Project ID", required=False, disabled=True)
     service_provider = forms.CharField(label="Service Provider", required=False, disabled=True)
@@ -45,6 +47,7 @@ class TimesheetEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Initialize additional readonly fields from related models
         if self.instance and self.instance.pk:
             self.fields['client_id'].initial = self.instance.client.client_id
             self.fields['project_id'].initial = self.instance.project.project_id
@@ -52,6 +55,7 @@ class TimesheetEntryForm(forms.ModelForm):
             self.fields['service_type'].initial = self.instance.project.service_type
             self.fields['last_updated'].initial = self.instance.last_updated
 
+        # Fields to be readonly/disabled in form
         readonly_fields = [
             'client', 'client_id', 'project', 'project_id',
             'service_provider', 'service_type', 'phase',
@@ -59,12 +63,10 @@ class TimesheetEntryForm(forms.ModelForm):
         ]
         for field in readonly_fields:
             self.fields[field].disabled = True
+            # Ensure consistent styling on disabled fields
+            self.fields[field].widget.attrs.setdefault('class', FORM_CONTROL_CLASS)
 
-        # Add form-control class to disabled/read-only fields not in widgets
-        for field_name in readonly_fields:
-            if 'class' not in self.fields[field_name].widget.attrs:
-                self.fields[field_name].widget.attrs['class'] = FORM_CONTROL_CLASS
-
+        # Limit billing_consultant choices to users with role='CONSULTANT'
         self.fields['billing_consultant'].queryset = CustomUser.objects.filter(role='CONSULTANT')
 
 
@@ -82,7 +84,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Add form-control to username, email fields for consistent styling
+        # Apply styling to core fields
         for field_name in ['username', 'email', 'role']:
             self.fields[field_name].widget.attrs.update({'class': FORM_CONTROL_CLASS})
 

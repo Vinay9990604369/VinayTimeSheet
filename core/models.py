@@ -12,6 +12,11 @@ class Client(models.Model):
     def __str__(self):
         return f"{self.company_name} ({self.client_id})"
 
+    class Meta:
+        ordering = ['company_name']
+        verbose_name = "Client"
+        verbose_name_plural = "Clients"
+
 
 class Project(models.Model):
     name = models.CharField(max_length=255)  # Project Name
@@ -22,6 +27,11 @@ class Project(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.project_id})"
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Project"
+        verbose_name_plural = "Projects"
 
 
 class CustomUser(AbstractUser):
@@ -40,30 +50,39 @@ class CustomUser(AbstractUser):
     )
 
     def clean(self):
-        if self.role == 'CLIENT' and self.clients.count() == 0:
-            raise ValidationError("Client users must be associated with at least one client.")
-        if self.role != 'CLIENT' and self.clients.exists():
-            raise ValidationError("Only client users can be associated with clients.")
+        super().clean()
+        # Validate client association only if the instance is saved or has a pk
+        if self.role == 'CLIENT':
+            if not self.pk and not self.clients.exists():
+                raise ValidationError("Client users must be associated with at least one client.")
+            elif self.pk and self.clients.count() == 0:
+                raise ValidationError("Client users must be associated with at least one client.")
+        else:
+            if self.clients.exists():
+                raise ValidationError("Only client users can be associated with clients.")
 
     def __str__(self):
         return self.username
 
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+
 
 class TimesheetEntry(models.Model):
+    PHASE_CHOICES = [
+        ('Discovery', 'Discovery'),
+        ('Prepare', 'Prepare'),
+        ('Explore', 'Explore'),
+        ('Realise', 'Realise'),
+        ('Deploy', 'Deploy'),
+        ('Run', 'Run'),
+    ]
+
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='timesheet_entries')
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='timesheet_entries')
 
-    phase = models.CharField(
-        max_length=50,
-        choices=[
-            ('Discovery', 'Discovery'),
-            ('Prepare', 'Prepare'),
-            ('Explore', 'Explore'),
-            ('Realise', 'Realise'),
-            ('Deploy', 'Deploy'),
-            ('Run', 'Run'),
-        ]
-    )
+    phase = models.CharField(max_length=50, choices=PHASE_CHOICES)
 
     billing_consultant = models.ForeignKey(
         CustomUser,
@@ -84,7 +103,7 @@ class TimesheetEntry(models.Model):
     def __str__(self):
         return f"{self.project.name} - {self.billing_consultant.username} - {self.date_of_service}"
 
-    # Computed, read-only fields for convenience in templates
+    # Convenience properties for template use
     @property
     def client_name(self):
         return self.client.company_name
@@ -119,3 +138,9 @@ class TimesheetEntry(models.Model):
         if self.billing_time_duration:
             return self.billing_time_duration.total_seconds() / 3600
         return 0.0
+
+    class Meta:
+        ordering = ['-date_of_service', 'billing_consultant']
+        verbose_name = "Timesheet Entry"
+        verbose_name_plural = "Timesheet Entries"
+        unique_together = ('billing_consultant', 'project', 'date_of_service')  # optional constraint

@@ -8,15 +8,15 @@ from .models import CustomUser, Client, Project, TimesheetEntry
 
 
 class CustomUserCreationForm(UserCreationForm):
-    class Meta:
-        model = CustomUser
-        fields = ('username', 'email', 'role', 'clients')
-
     clients = forms.ModelMultipleChoiceField(
         queryset=Client.objects.all(),
         required=False,
         widget=admin.widgets.FilteredSelectMultiple('Clients', is_stacked=False)
     )
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'role', 'clients')
 
     def clean(self):
         cleaned_data = super().clean()
@@ -31,15 +31,15 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class CustomUserChangeForm(UserChangeForm):
-    class Meta:
-        model = CustomUser
-        fields = ('username', 'email', 'role', 'clients', 'is_active', 'is_staff')
-
     clients = forms.ModelMultipleChoiceField(
         queryset=Client.objects.all(),
         required=False,
         widget=admin.widgets.FilteredSelectMultiple('Clients', is_stacked=False)
     )
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'role', 'clients', 'is_active', 'is_staff')
 
     def clean(self):
         cleaned_data = super().clean()
@@ -83,14 +83,16 @@ class CustomUserAdmin(UserAdmin):
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ['company_name', 'client_id', 'address']
-    search_fields = ['company_name']
+    search_fields = ['company_name', 'client_id']
+    ordering = ['company_name']
 
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'client', 'project_id']
+    list_display = ['name', 'client', 'project_id', 'service_provider', 'service_type']
     list_filter = ['client']
-    search_fields = ['name', 'project_id']
+    search_fields = ['name', 'project_id', 'service_provider', 'service_type']
+    ordering = ['name']
 
 
 class TimesheetEntryAdminForm(forms.ModelForm):
@@ -100,6 +102,7 @@ class TimesheetEntryAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        # Add any custom validation logic here if needed
         return cleaned_data
 
 
@@ -112,9 +115,11 @@ class TimesheetEntryAdmin(admin.ModelAdmin):
         'phase', 'billing_consultant', 'date_of_service',
         'billing_time_duration', 'last_updated'
     ]
-    list_filter = ['client', 'project', 'billing_consultant', 'date_of_service']
-    search_fields = ['client__company_name', 'project__name', 'service_provider']
+    list_filter = ['client', 'project', 'billing_consultant', 'date_of_service', 'phase']
+    search_fields = ['client__company_name', 'project__name', 'service_provider', 'service_type', 'billing_consultant__username']
+    ordering = ['-date_of_service']
 
+    # These fields are readonly to prevent accidental edits via admin UI
     readonly_fields = [
         'client', 'project', 'service_provider', 'service_type',
         'phase', 'billing_consultant', 'date_of_service', 'last_updated'

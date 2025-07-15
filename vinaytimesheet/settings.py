@@ -72,7 +72,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"  # Change if you want your local timezone e.g. "Asia/Kolkata"
+TIME_ZONE = "Asia/Kolkata"  # Change to "UTC" universal time zone
 USE_I18N = True
 USE_TZ = True
 

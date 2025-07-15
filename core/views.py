@@ -10,6 +10,7 @@ from .models import Client, Project, TimesheetEntry
 
 @login_required
 def redirect_after_login(request):
+    """Redirect user based on their role after login."""
     if request.user.role == 'ADMIN':
         return redirect('core:admin_dashboard')
     elif request.user.role == 'CONSULTANT':
@@ -23,6 +24,7 @@ def redirect_after_login(request):
 
 @login_required
 def timesheet_entry(request):
+    """Consultant view to add/update timesheet entries for a selected client, project, and month."""
     if request.user.role != 'CONSULTANT':
         messages.error(request, "Access denied.")
         return redirect('core:login')
@@ -47,10 +49,12 @@ def timesheet_entry(request):
             month = None
 
         if year and month:
+            # Restrict projects dropdown to selected client
             projects = Project.objects.filter(client_id=selected_client_id)
             num_days = monthrange(year, month)[1]
             first_day = date(year, month, 1)
 
+            # Fetch existing entries for the selected month
             existing_entries = TimesheetEntry.objects.filter(
                 billing_consultant=request.user,
                 client_id=selected_client_id,
@@ -61,6 +65,7 @@ def timesheet_entry(request):
 
             existing_dates = set(entry.date_of_service for entry in existing_entries)
 
+            # Create missing TimesheetEntry records for each day of the month
             with transaction.atomic():
                 for day in range(1, num_days + 1):
                     day_date = date(year, month, day)
@@ -70,9 +75,10 @@ def timesheet_entry(request):
                             client_id=selected_client_id,
                             project_id=selected_project_id,
                             date_of_service=day_date,
-                            phase='Discovery',
+                            phase='Discovery',  # default phase
                         )
 
+            # Reload all entries after potential creation
             timesheet_entries = TimesheetEntry.objects.filter(
                 billing_consultant=request.user,
                 client_id=selected_client_id,
@@ -94,6 +100,7 @@ def timesheet_entry(request):
                     remarks_val = request.POST.get(remarks_key)
                     phase_val = request.POST.get(phase_key)
 
+                    # Validate duration input
                     try:
                         duration_float = float(duration_val) if duration_val else 0
                         if duration_float < 0 or duration_float > 24:
@@ -103,12 +110,14 @@ def timesheet_entry(request):
                         any_error = True
                         continue
 
+                    # Validate phase selection
                     valid_phases = dict(TimesheetEntry._meta.get_field('phase').choices).keys()
                     if phase_val not in valid_phases:
                         messages.error(request, f"Invalid phase selection for date {entry.date_of_service}.")
                         any_error = True
                         continue
 
+                    # Save updates
                     entry.billing_time_duration = timedelta(hours=duration_float)
                     entry.work_description = description_val
                     entry.comments = remarks_val
@@ -135,11 +144,13 @@ def timesheet_entry(request):
 
 @login_required
 def admin_dashboard(request):
+    """Render admin dashboard."""
     return render(request, 'core/admin_dashboard.html', {})
 
 
 @login_required
 def consultant_dashboard(request):
+    """Consultant dashboard with filtering on client, project, and month."""
     selected_client_id = request.GET.get('client')
     selected_project_id = request.GET.get('project')
     selected_month = request.GET.get('month')
@@ -171,6 +182,7 @@ def consultant_dashboard(request):
                 date_of_service__month=selected_date.month
             )
         except ValueError:
+            # Invalid date format: ignore filter
             pass
 
     timesheet_entries = timesheet_entries.select_related('client', 'project', 'billing_consultant').order_by('date_of_service')
@@ -188,4 +200,5 @@ def consultant_dashboard(request):
 
 @login_required
 def client_dashboard(request):
+    """Render client dashboard."""
     return render(request, 'core/client_dashboard.html', {})
