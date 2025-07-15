@@ -2,9 +2,10 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import TimesheetEntry, CustomUser, Client
 
+# Define a reusable CSS class string for form inputs
+FORM_CONTROL_CLASS = 'form-control'
 
 class TimesheetEntryForm(forms.ModelForm):
-    # Read-only fields derived from related models
     client_id = forms.CharField(label="Client ID", required=False, disabled=True)
     project_id = forms.CharField(label="Project ID", required=False, disabled=True)
     service_provider = forms.CharField(label="Service Provider", required=False, disabled=True)
@@ -30,29 +31,27 @@ class TimesheetEntryForm(forms.ModelForm):
         ]
 
         widgets = {
-            'client': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'project': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'phase': forms.Select(attrs={'disabled': True}),
-            'billing_consultant': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'date_of_service': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
-            'billing_time_duration': forms.TimeInput(attrs={'type': 'time'}),
-            'work_description': forms.Textarea(attrs={'rows': 3}),
-            'comments': forms.Textarea(attrs={'rows': 2}),
-            'last_updated': forms.DateTimeInput(attrs={'readonly': 'readonly'}),
+            'client': forms.TextInput(attrs={'readonly': 'readonly', 'class': FORM_CONTROL_CLASS}),
+            'project': forms.TextInput(attrs={'readonly': 'readonly', 'class': FORM_CONTROL_CLASS}),
+            'phase': forms.Select(attrs={'disabled': True, 'class': FORM_CONTROL_CLASS}),
+            'billing_consultant': forms.TextInput(attrs={'readonly': 'readonly', 'class': FORM_CONTROL_CLASS}),
+            'date_of_service': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly', 'class': FORM_CONTROL_CLASS}),
+            'billing_time_duration': forms.TimeInput(attrs={'type': 'time', 'class': FORM_CONTROL_CLASS}),
+            'work_description': forms.Textarea(attrs={'rows': 3, 'class': FORM_CONTROL_CLASS}),
+            'comments': forms.Textarea(attrs={'rows': 2, 'class': FORM_CONTROL_CLASS}),
+            'last_updated': forms.DateTimeInput(attrs={'readonly': 'readonly', 'class': FORM_CONTROL_CLASS}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.instance and self.instance.pk:
-            # Populate read-only virtual fields from relationships
             self.fields['client_id'].initial = self.instance.client.client_id
             self.fields['project_id'].initial = self.instance.project.project_id
             self.fields['service_provider'].initial = self.instance.project.service_provider
             self.fields['service_type'].initial = self.instance.project.service_type
             self.fields['last_updated'].initial = self.instance.last_updated
 
-        # Disable all read-only fields
         readonly_fields = [
             'client', 'client_id', 'project', 'project_id',
             'service_provider', 'service_type', 'phase',
@@ -61,7 +60,11 @@ class TimesheetEntryForm(forms.ModelForm):
         for field in readonly_fields:
             self.fields[field].disabled = True
 
-        # Filter consultants in billing_consultant dropdown (useful in admin panel)
+        # Add form-control class to disabled/read-only fields not in widgets
+        for field_name in readonly_fields:
+            if 'class' not in self.fields[field_name].widget.attrs:
+                self.fields[field_name].widget.attrs['class'] = FORM_CONTROL_CLASS
+
         self.fields['billing_consultant'].queryset = CustomUser.objects.filter(role='CONSULTANT')
 
 
@@ -76,6 +79,12 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'role', 'clients')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add form-control to username, email fields for consistent styling
+        for field_name in ['username', 'email', 'role']:
+            self.fields[field_name].widget.attrs.update({'class': FORM_CONTROL_CLASS})
 
     def clean(self):
         cleaned_data = super().clean()
@@ -99,6 +108,11 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'role', 'clients')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ['username', 'email', 'role']:
+            self.fields[field_name].widget.attrs.update({'class': FORM_CONTROL_CLASS})
 
     def clean(self):
         cleaned_data = super().clean()
