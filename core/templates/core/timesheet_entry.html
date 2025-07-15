@@ -63,7 +63,17 @@
         <td><input type="text" value="{{ entry.project.project_id }}" readonly></td>
         <td><input type="text" value="{{ entry.project.service_provider }}" readonly></td>
         <td><input type="text" value="{{ entry.project.service_type }}" readonly></td>
-        <td><input type="text" value="{{ entry.phase }}" readonly></td>
+
+        <!-- PHASE (Editable Select Field) -->
+        <td>
+          <select name="phase_{{ entry.id }}" required>
+            <option value="">-- Select Phase --</option>
+            {% for key, label in entry._meta.get_field('phase').choices %}
+            <option value="{{ key }}" {% if key==entry.phase %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </td>
+
         <td><input type="text" value="{{ entry.billing_consultant.username }}" readonly></td>
         <td><input type="text" value="{{ entry.last_updated|date:" Y-m-d H:i" }}" readonly></td>
 

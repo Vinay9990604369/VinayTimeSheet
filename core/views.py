@@ -20,7 +20,6 @@ def redirect_after_login(request):
     elif request.user.role == 'CLIENT':
         return redirect('core:client_dashboard')
     else:
-        # If role is not recognized, logout or redirect to login page
         messages.error(request, "Invalid user role.")
         return redirect('core:login')
 
@@ -51,6 +50,7 @@ def timesheet_entry(request):
             month = None
 
         if year and month:
+            # Limit projects to those of selected client
             projects = Project.objects.filter(client_id=selected_client_id)
 
             num_days = monthrange(year, month)[1]
@@ -66,6 +66,7 @@ def timesheet_entry(request):
 
             existing_dates = set(entry.date_of_service for entry in existing_entries)
 
+            # Create missing TimesheetEntry records for all days of month
             with transaction.atomic():
                 for day in range(1, num_days + 1):
                     day_date = date(year, month, day)
@@ -75,6 +76,7 @@ def timesheet_entry(request):
                             client_id=selected_client_id,
                             project_id=selected_project_id,
                             date_of_service=day_date,
+                            phase='Discovery',  # default phase; adjust if needed
                         )
 
             timesheet_entries = TimesheetEntry.objects.filter(
@@ -91,10 +93,12 @@ def timesheet_entry(request):
                     duration_key = f'duration_{entry.id}'
                     description_key = f'description_{entry.id}'
                     remarks_key = f'remarks_{entry.id}'
+                    phase_key = f'phase_{entry.id}'
 
                     duration_val = request.POST.get(duration_key)
                     description_val = request.POST.get(description_key)
                     remarks_val = request.POST.get(remarks_key)
+                    phase_val = request.POST.get(phase_key)
 
                     try:
                         duration_float = float(duration_val) if duration_val else 0
@@ -105,15 +109,24 @@ def timesheet_entry(request):
                         any_error = True
                         continue
 
+                    # Validate phase choice
+                    valid_phases = dict(TimesheetEntry._meta.get_field('phase').choices).keys()
+                    if phase_val not in valid_phases:
+                        messages.error(request, f"Invalid phase selection for date {entry.date_of_service}.")
+                        any_error = True
+                        continue
+
                     entry.billing_time_duration = timedelta(hours=duration_float)
                     entry.work_description = description_val
                     entry.comments = remarks_val
+                    entry.phase = phase_val
                     entry.save()
 
                 if not any_error:
                     messages.success(request, "Timesheet entries updated successfully.")
                     url = f"{request.path}?client={selected_client_id}&project={selected_project_id}&month={selected_month}"
                     return redirect(url)
+
     else:
         timesheet_entries = []
 
