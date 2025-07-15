@@ -10,7 +10,7 @@
   <select id="client" name="client" required class="form-control">
     <option value="">-- Select Client --</option>
     {% for client in clients %}
-    <option value="{{ client.id }}" {% if client.id|stringformat:"s" == selected_client_id %}selected{% endif %}>
+    <option value="{{ client.id }}" {% if client.id|stringformat:"s" == selected_client_id|stringformat:"s" %}selected{% endif %}>
       {{ client.company_name }}
     </option>
     {% endfor %}
@@ -20,21 +20,14 @@
   <select id="project" name="project" required class="form-control">
     <option value="">-- Select Project --</option>
     {% for project in projects %}
-    <option value="{{ project.id }}" {% if project.id|stringformat:"s" == selected_project_id %}selected{% endif %}>
+    <option value="{{ project.id }}" {% if project.id|stringformat:"s" == selected_project_id|stringformat:"s" %}selected{% endif %}>
       {{ project.name }}
     </option>
     {% endfor %}
   </select>
 
   <label for="month">Month:</label>
-  <input
-    type="month"
-    id="month"
-    name="month"
-    value="{{ selected_month }}"
-    required
-    class="form-control"
-  />
+  <input type="month" id="month" name="month" value="{{ selected_month }}" required class="form-control" />
 
   <button type="submit" class="button button-primary">Load Timesheet</button>
 </form>
@@ -73,21 +66,16 @@
 
         <!-- Editable Phase Select -->
         <td>
-          <select
-            id="phase_{{ entry.id }}"
-            name="phase_{{ entry.id }}"
-            required
-            class="form-control"
-          >
+          <select id="phase_{{ entry.id }}" name="phase_{{ entry.id }}" required class="form-control">
             <option value="">-- Select Phase --</option>
-            {% for key, label in entry._meta.get_field('phase').choices %}
+            {% for key, label in phase_choices %}
             <option value="{{ key }}" {% if key == entry.phase %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </td>
 
         <td><input type="text" value="{{ entry.billing_consultant.username }}" readonly class="form-control" /></td>
-        <td><input type="text" value="{{ entry.last_updated|date:"Y-m-d H:i" }}" readonly class="form-control" /></td>
+        <td><input type="text" value="{{ entry.last_updated|date:'Y-m-d H:i' }}" readonly class="form-control" /></td>
 
         <td>
           <input

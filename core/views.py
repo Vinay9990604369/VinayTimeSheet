@@ -10,9 +10,6 @@ from .models import Client, Project, TimesheetEntry
 
 @login_required
 def redirect_after_login(request):
-    """
-    Redirect users to their respective dashboard based on role after login.
-    """
     if request.user.role == 'ADMIN':
         return redirect('core:admin_dashboard')
     elif request.user.role == 'CONSULTANT':
@@ -50,9 +47,7 @@ def timesheet_entry(request):
             month = None
 
         if year and month:
-            # Limit projects to those of selected client
             projects = Project.objects.filter(client_id=selected_client_id)
-
             num_days = monthrange(year, month)[1]
             first_day = date(year, month, 1)
 
@@ -66,7 +61,6 @@ def timesheet_entry(request):
 
             existing_dates = set(entry.date_of_service for entry in existing_entries)
 
-            # Create missing TimesheetEntry records for all days of month
             with transaction.atomic():
                 for day in range(1, num_days + 1):
                     day_date = date(year, month, day)
@@ -76,7 +70,7 @@ def timesheet_entry(request):
                             client_id=selected_client_id,
                             project_id=selected_project_id,
                             date_of_service=day_date,
-                            phase='Discovery',  # default phase; adjust if needed
+                            phase='Discovery',
                         )
 
             timesheet_entries = TimesheetEntry.objects.filter(
@@ -109,7 +103,6 @@ def timesheet_entry(request):
                         any_error = True
                         continue
 
-                    # Validate phase choice
                     valid_phases = dict(TimesheetEntry._meta.get_field('phase').choices).keys()
                     if phase_val not in valid_phases:
                         messages.error(request, f"Invalid phase selection for date {entry.date_of_service}.")
@@ -127,9 +120,6 @@ def timesheet_entry(request):
                     url = f"{request.path}?client={selected_client_id}&project={selected_project_id}&month={selected_month}"
                     return redirect(url)
 
-    else:
-        timesheet_entries = []
-
     context = {
         'clients': clients,
         'projects': projects,
@@ -137,6 +127,7 @@ def timesheet_entry(request):
         'selected_client_id': selected_client_id,
         'selected_project_id': selected_project_id,
         'selected_month': selected_month,
+        'phase_choices': TimesheetEntry._meta.get_field('phase').choices,
     }
 
     return render(request, 'core/timesheet_entry.html', context)
@@ -144,8 +135,7 @@ def timesheet_entry(request):
 
 @login_required
 def admin_dashboard(request):
-    context = {}
-    return render(request, 'core/admin_dashboard.html', context)
+    return render(request, 'core/admin_dashboard.html', {})
 
 
 @login_required
@@ -154,7 +144,6 @@ def consultant_dashboard(request):
     selected_project_id = request.GET.get('project')
     selected_month = request.GET.get('month')
 
-    # Convert to int or None for template comparison
     try:
         selected_client_id = int(selected_client_id) if selected_client_id else None
     except ValueError:
@@ -182,7 +171,7 @@ def consultant_dashboard(request):
                 date_of_service__month=selected_date.month
             )
         except ValueError:
-            pass  # Ignore invalid month format
+            pass
 
     timesheet_entries = timesheet_entries.select_related('client', 'project', 'billing_consultant').order_by('date_of_service')
 
@@ -199,5 +188,4 @@ def consultant_dashboard(request):
 
 @login_required
 def client_dashboard(request):
-    context = {}
-    return render(request, 'core/client_dashboard.html', context)
+    return render(request, 'core/client_dashboard.html', {})

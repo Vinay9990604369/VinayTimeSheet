@@ -1,15 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import CustomUser, Client, Project, TimesheetEntry
 
 
-class CustomUserCreationForm(forms.ModelForm):
+class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'role', 'clients', 'password')
+        fields = ('username', 'email', 'role', 'clients')
 
     clients = forms.ModelMultipleChoiceField(
         queryset=Client.objects.all(),
@@ -29,7 +30,7 @@ class CustomUserCreationForm(forms.ModelForm):
         return cleaned_data
 
 
-class CustomUserChangeForm(forms.ModelForm):
+class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'role', 'clients', 'is_active', 'is_staff')
@@ -60,36 +61,28 @@ class CustomUserAdmin(UserAdmin):
 
     list_display = ['username', 'email', 'role', 'is_staff', 'is_active']
     list_filter = ['role', 'is_staff', 'is_active']
+    search_fields = ['username', 'email']
+    ordering = ('username',)
 
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj)
-        if obj is None:
-            return fieldsets + (
-                (None, {'fields': ('role', 'clients')}),
-            )
-        if obj.role == 'CLIENT':
-            return fieldsets + (
-                (None, {'fields': ('role', 'clients')}),
-            )
-        else:
-            return fieldsets + (
-                (None, {'fields': ('role',)}),
-            )
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Personal info', {'fields': ('email',)}),
+        ('Role', {'fields': ('role', 'clients')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+    )
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if obj is not None:
-            if obj.role == 'CLIENT':
-                form.base_fields['clients'].queryset = Client.objects.all()
-                form.base_fields['clients'].required = True
-            else:
-                form.base_fields.pop('clients', None)
-        return form
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'role', 'clients', 'password1', 'password2'),
+        }),
+    )
 
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['company_name', 'client_id', 'address']  # updated here
+    list_display = ['company_name', 'client_id', 'address']
     search_fields = ['company_name']
 
 
@@ -107,7 +100,6 @@ class TimesheetEntryAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        # Add any additional validation here if needed
         return cleaned_data
 
 
