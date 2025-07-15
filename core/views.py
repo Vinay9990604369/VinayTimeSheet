@@ -150,7 +150,50 @@ def admin_dashboard(request):
 
 @login_required
 def consultant_dashboard(request):
-    context = {}
+    selected_client_id = request.GET.get('client')
+    selected_project_id = request.GET.get('project')
+    selected_month = request.GET.get('month')
+
+    # Convert to int or None for template comparison
+    try:
+        selected_client_id = int(selected_client_id) if selected_client_id else None
+    except ValueError:
+        selected_client_id = None
+
+    try:
+        selected_project_id = int(selected_project_id) if selected_project_id else None
+    except ValueError:
+        selected_project_id = None
+
+    clients = Client.objects.all()
+    projects = Project.objects.all()
+
+    timesheet_entries = TimesheetEntry.objects.all()
+    if selected_client_id:
+        timesheet_entries = timesheet_entries.filter(client_id=selected_client_id)
+        projects = projects.filter(client_id=selected_client_id)
+    if selected_project_id:
+        timesheet_entries = timesheet_entries.filter(project_id=selected_project_id)
+    if selected_month:
+        try:
+            selected_date = datetime.strptime(selected_month, "%Y-%m")
+            timesheet_entries = timesheet_entries.filter(
+                date_of_service__year=selected_date.year,
+                date_of_service__month=selected_date.month
+            )
+        except ValueError:
+            pass  # Ignore invalid month format
+
+    timesheet_entries = timesheet_entries.select_related('client', 'project', 'billing_consultant').order_by('date_of_service')
+
+    context = {
+        'clients': clients,
+        'projects': projects,
+        'timesheet_entries': timesheet_entries,
+        'selected_client_id': selected_client_id,
+        'selected_project_id': selected_project_id,
+        'selected_month': selected_month,
+    }
     return render(request, 'core/consultant_dashboard.html', context)
 
 
