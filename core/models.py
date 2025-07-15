@@ -1,23 +1,24 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
+from datetime import timedelta
 
 
 class Client(models.Model):
-    name = models.CharField(max_length=255, unique=True)  # Client Name
-    client_id = models.CharField(max_length=50, unique=True)  # Client_ID
+    company_name = models.CharField(max_length=255, unique=True)  # Previously 'name'
+    client_id = models.CharField(max_length=50, unique=True)
     address = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.client_id})"
+        return f"{self.company_name} ({self.client_id})"
 
 
 class Project(models.Model):
     name = models.CharField(max_length=255)  # Project Name
-    project_id = models.CharField(max_length=100, unique=True)  # Project_ID
+    project_id = models.CharField(max_length=100, unique=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
-    service_provider = models.CharField(max_length=255)  # Service_Provider
-    service_type = models.CharField(max_length=100)  # Service_Type
+    service_provider = models.CharField(max_length=255)
+    service_type = models.CharField(max_length=100)
 
     def __str__(self):
         return f"{self.name} ({self.project_id})"
@@ -49,8 +50,8 @@ class CustomUser(AbstractUser):
 
 
 class TimesheetEntry(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='timesheet_entries')  # Client (FK)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='timesheet_entries')  # Project (FK)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='timesheet_entries')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='timesheet_entries')
 
     phase = models.CharField(
         max_length=50,
@@ -71,19 +72,22 @@ class TimesheetEntry(models.Model):
         related_name='timesheet_entries'
     )
 
-    date_of_service = models.DateField()  # Date_of_Service
-    billing_time_duration = models.DurationField(help_text="Format: HH:MM:SS")  # Billing_Time_Duration
-    work_description = models.TextField()  # Work_Description
-    comments = models.TextField(blank=True, null=True)  # Comments
-    last_updated = models.DateTimeField(auto_now=True)  # Last_Updated
+    date_of_service = models.DateField()
+    billing_time_duration = models.DurationField(
+        help_text="Format: HH:MM:SS",
+        default=timedelta(0)
+    )
+    work_description = models.TextField(blank=True)
+    comments = models.TextField(blank=True, null=True)
+    last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.project.name} - {self.billing_consultant.username} - {self.date_of_service}"
 
-    # Read-only computed properties
+    # Computed, read-only fields for convenience in templates
     @property
     def client_name(self):
-        return self.client.name
+        return self.client.company_name
 
     @property
     def client_id(self):

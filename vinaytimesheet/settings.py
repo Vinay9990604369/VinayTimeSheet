@@ -11,7 +11,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -55,7 +54,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "vinaytimesheet.wsgi.application"
 
-
 # Database
 DATABASES = {
     "default": {
@@ -63,7 +61,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -73,13 +70,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
 # Internationalization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"  # Change if you want your local timezone e.g. "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
@@ -87,20 +82,19 @@ STATICFILES_DIRS = [
     BASE_DIR / "core" / "static",  # Add this if you have static assets in core/static/
 ]
 
-
 # Custom user model
 AUTH_USER_MODEL = "core.CustomUser"
 
-
 # Redirect URLs for login/logout
 LOGIN_URL = "/login/"
-LOGIN_REDIRECT_URL = "/"  # Can customize later based on your views
-LOGOUT_REDIRECT_URL = "/login/"
 
+# This URL should point to a view that redirects users to the correct dashboard based on role
+LOGIN_REDIRECT_URL = "/redirect-after-login/"
+
+LOGOUT_REDIRECT_URL = "/login/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 # Email backend for development (prints emails to console)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

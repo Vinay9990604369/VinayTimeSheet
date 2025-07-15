@@ -9,6 +9,23 @@ from .models import Client, Project, TimesheetEntry
 
 
 @login_required
+def redirect_after_login(request):
+    """
+    Redirect users to their respective dashboard based on role after login.
+    """
+    if request.user.role == 'ADMIN':
+        return redirect('core:admin_dashboard')
+    elif request.user.role == 'CONSULTANT':
+        return redirect('core:consultant_dashboard')
+    elif request.user.role == 'CLIENT':
+        return redirect('core:client_dashboard')
+    else:
+        # If role is not recognized, logout or redirect to login page
+        messages.error(request, "Invalid user role.")
+        return redirect('core:login')
+
+
+@login_required
 def timesheet_entry(request):
     if request.user.role != 'CONSULTANT':
         messages.error(request, "Access denied.")

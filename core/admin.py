@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 from .models import CustomUser, Client, Project, TimesheetEntry
 
+
 class CustomUserCreationForm(forms.ModelForm):
     class Meta:
         model = CustomUser
@@ -88,9 +89,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    # Change 'name' to your actual client model's field name for company
-    list_display = ['name', 'address']
-    search_fields = ['name']
+    list_display = ['company_name', 'client_id', 'address']  # updated here
+    search_fields = ['company_name']
 
 
 @admin.register(Project)
@@ -121,7 +121,7 @@ class TimesheetEntryAdmin(admin.ModelAdmin):
         'billing_time_duration', 'last_updated'
     ]
     list_filter = ['client', 'project', 'billing_consultant', 'date_of_service']
-    search_fields = ['client__name', 'project__name', 'service_provider']
+    search_fields = ['client__company_name', 'project__name', 'service_provider']
 
     readonly_fields = [
         'client', 'project', 'service_provider', 'service_type',
