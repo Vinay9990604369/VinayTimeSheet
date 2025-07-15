@@ -6,11 +6,10 @@
 
 <!-- Filters on top -->
 <form method="get" action="{% url 'core:timesheet_entry' %}" style="margin-bottom: 1.5rem; max-width: 900px;">
-  <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+  <div style="display: flex; gap: 1rem; flex-wrap: nowrap; align-items: center;">
     <div style="flex: 1 1 200px;">
       <label for="client" style="font-weight: 600;">Client:</label>
-      <select id="client" name="client" required class="form-control"
-        style="width: 100%; padding: 0.3rem; height: 36px;">
+      <select id="client" name="client" required class="form-control" style="width: 100%; padding: 0.3rem;">
         <option value="">-- Select Client --</option>
         {% for client in clients %}
         {% if client.id|stringformat:"s" == selected_client_id %}
@@ -24,8 +23,7 @@
 
     <div style="flex: 1 1 200px;">
       <label for="project" style="font-weight: 600;">Project:</label>
-      <select id="project" name="project" required class="form-control"
-        style="width: 100%; padding: 0.3rem; height: 36px;">
+      <select id="project" name="project" required class="form-control" style="width: 100%; padding: 0.3rem;">
         <option value="">-- Select Project --</option>
         {% for project in projects %}
         {% if project.id|stringformat:"s" == selected_project_id %}
@@ -40,15 +38,15 @@
     <div style="flex: 1 1 180px;">
       <label for="month" style="font-weight: 600;">Month:</label>
       <input type="month" id="month" name="month" value="{{ selected_month }}" required class="form-control"
-        style="width: 100%; padding: 0.3rem; height: 36px;" />
+        style="width: 100%; padding: 0.3rem;" />
     </div>
+  </div>
 
-    <div style="flex: 0 0 auto; margin-top: 1.8rem;">
-      <button type="submit" class="button button-primary"
-        style="padding: 0.4rem 1.2rem; border-radius: 20px; height: 36px; align-self: flex-end;">
-        Load Timesheet
-      </button>
-    </div>
+  <div style="margin-top: 1rem; text-align: left;">
+    <button type="submit" class="button button-primary"
+      style="padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600;">
+      Load Timesheet
+    </button>
   </div>
 </form>
 
@@ -152,8 +150,10 @@
     </table>
   </div>
 
-  <button type="submit" class="button button-primary" style="margin-top: 1rem; padding: 0.5rem 1.2rem;">Save All
-    Entries</button>
+  <button type="submit" class="button button-primary"
+    style="margin-top: 1rem; padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600;">
+    Save All Entries
+  </button>
 </form>
 {% else %}
 <p>Please select client, project and month and click "Load Timesheet" to see entries.</p>
