@@ -1,9 +1,10 @@
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 from django.db import transaction
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponseForbidden
 
 from .models import Client, Project, TimesheetEntry
 
@@ -52,7 +53,6 @@ def timesheet_entry(request):
             # Restrict projects dropdown to selected client
             projects = Project.objects.filter(client_id=selected_client_id)
             num_days = monthrange(year, month)[1]
-            first_day = date(year, month, 1)
 
             # Fetch existing entries for the selected month
             existing_entries = TimesheetEntry.objects.filter(
@@ -65,7 +65,7 @@ def timesheet_entry(request):
 
             existing_dates = set(entry.date_of_service for entry in existing_entries)
 
-            # Create missing TimesheetEntry records for each day of the month
+            # Create missing TimesheetEntry records
             with transaction.atomic():
                 for day in range(1, num_days + 1):
                     day_date = date(year, month, day)
@@ -75,10 +75,10 @@ def timesheet_entry(request):
                             client_id=selected_client_id,
                             project_id=selected_project_id,
                             date_of_service=day_date,
-                            phase='Discovery',  # default phase
+                            phase='Discovery',
                         )
 
-            # Reload all entries after potential creation
+            # Reload entries
             timesheet_entries = TimesheetEntry.objects.filter(
                 billing_consultant=request.user,
                 client_id=selected_client_id,
@@ -86,6 +86,14 @@ def timesheet_entry(request):
                 date_of_service__year=year,
                 date_of_service__month=month,
             ).select_related('client', 'project').order_by('date_of_service')
+
+            # Add duration_in_hours property for each entry
+            for entry in timesheet_entries:
+                entry.duration_in_hours = (
+                    entry.billing_time_duration.total_seconds() / 3600
+                    if entry.billing_time_duration
+                    else 0
+                )
 
             if request.method == 'POST':
                 any_error = False
@@ -100,24 +108,21 @@ def timesheet_entry(request):
                     remarks_val = request.POST.get(remarks_key)
                     phase_val = request.POST.get(phase_key)
 
-                    # Validate duration input
                     try:
                         duration_float = float(duration_val) if duration_val else 0
                         if duration_float < 0 or duration_float > 24:
                             raise ValueError("Invalid duration")
                     except Exception:
-                        messages.error(request, f"Invalid billing time duration for date {entry.date_of_service}.")
+                        messages.error(request, f"Invalid billing time duration for {entry.date_of_service}.")
                         any_error = True
                         continue
 
-                    # Validate phase selection
                     valid_phases = dict(TimesheetEntry._meta.get_field('phase').choices).keys()
                     if phase_val not in valid_phases:
-                        messages.error(request, f"Invalid phase selection for date {entry.date_of_service}.")
+                        messages.error(request, f"Invalid phase for {entry.date_of_service}.")
                         any_error = True
                         continue
 
-                    # Save updates
                     entry.billing_time_duration = timedelta(hours=duration_float)
                     entry.work_description = description_val
                     entry.comments = remarks_val
@@ -145,7 +150,7 @@ def timesheet_entry(request):
 @login_required
 def admin_dashboard(request):
     """Render admin dashboard."""
-    return render(request, 'core/admin_dashboard.html', {})
+    return render(request, 'core/admin_dashboard.html')
 
 
 @login_required
@@ -182,7 +187,6 @@ def consultant_dashboard(request):
                 date_of_service__month=selected_date.month
             )
         except ValueError:
-            # Invalid date format: ignore filter
             pass
 
     timesheet_entries = timesheet_entries.select_related('client', 'project', 'billing_consultant').order_by('date_of_service')
@@ -201,4 +205,40 @@ def consultant_dashboard(request):
 @login_required
 def client_dashboard(request):
     """Render client dashboard."""
-    return render(request, 'core/client_dashboard.html', {})
+    return render(request, 'core/client_dashboard.html')
+
+
+@login_required
+def timesheet_entry_edit(request, entry_id):
+    """Allow consultants to edit a single timesheet entry."""
+    entry = get_object_or_404(TimesheetEntry, id=entry_id)
+
+    if request.user.role != 'CONSULTANT' or entry.billing_consultant != request.user:
+        return HttpResponseForbidden("You do not have permission to edit this entry.")
+
+    if request.method == 'POST':
+        duration = request.POST.get('duration')
+        description = request.POST.get('description')
+        remarks = request.POST.get('remarks')
+        phase = request.POST.get('phase')
+
+        try:
+            duration_float = float(duration)
+            if not 0 <= duration_float <= 24:
+                raise ValueError("Invalid duration")
+        except Exception:
+            messages.error(request, "Invalid duration.")
+        else:
+            entry.billing_time_duration = timedelta(hours=duration_float)
+            entry.work_description = description
+            entry.comments = remarks
+            entry.phase = phase
+            entry.save()
+            messages.success(request, "Entry updated successfully.")
+            return redirect('core:consultant_dashboard')
+
+    context = {
+        'entry': entry,
+        'phase_choices': TimesheetEntry._meta.get_field('phase').choices,
+    }
+    return render(request, 'core/timesheet_entry_edit.html', context)

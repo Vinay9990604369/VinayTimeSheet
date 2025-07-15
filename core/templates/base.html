@@ -1,46 +1,49 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <title>{% block title %}Vinay TimeSheet{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
 </head>
+
 <body>
 
-<header>
-    <h1>Vinay TimeSheet App</h1>
-    <nav>
-        {% if user.is_authenticated %}
+    <header>
+        <h1>Vinay TimeSheet App</h1>
+        <nav>
+            {% if user.is_authenticated %}
             {% if user.role == 'ADMIN' %}
-                <a href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a>
+            <a href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a>
             {% elif user.role == 'CONSULTANT' %}
-                <a href="{% url 'core:consultant_dashboard' %}">Consultant Dashboard</a>
+            <a href="{% url 'core:consultant_dashboard' %}">Consultant Dashboard</a>
             {% elif user.role == 'CLIENT' %}
-                <a href="{% url 'core:client_dashboard' %}">Client Dashboard</a>
+            <a href="{% url 'core:client_dashboard' %}">Client Dashboard</a>
             {% endif %}
             <a href="{% url 'core:timesheet_entry' %}">Timesheet Entry</a>
             <a href="{% url 'core:logout' %}">Logout</a>
-        {% else %}
+            {% else %}
             <a href="{% url 'core:login' %}">Login</a>
-        {% endif %}
-    </nav>
-</header>
+            {% endif %}
+        </nav>
+    </header>
 
-<main>
-    {% if messages %}
+    <main>
+        {% if messages %}
         {% for message in messages %}
-            <div class="message">{{ message }}</div>
+        <div class="message">{{ message }}</div>
         {% endfor %}
-    {% endif %}
+        {% endif %}
 
-    {% block content %}
-    {% endblock %}
-</main>
+        {% block content %}
+        {% endblock %}
+    </main>
 
-<footer>
-    <p>&copy; 2025 Vinay Timesheet</p>
-</footer>
+    <footer>
+        <p>&copy; 2025 Vinay Timesheet</p>
+    </footer>
 
 </body>
+
 </html>

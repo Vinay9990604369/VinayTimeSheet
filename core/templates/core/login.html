@@ -10,9 +10,9 @@
   <ul class="errorlist card"
     style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
     {% for field in form %}
-    {% for error in field.errors %}
-    <li>{{ error }}</li>
-    {% endfor %}
+      {% for error in field.errors %}
+      <li>{{ error }}</li>
+      {% endfor %}
     {% endfor %}
     {% for error in form.non_field_errors %}
     <li>{{ error }}</li>
@@ -24,14 +24,16 @@
     {% csrf_token %}
 
     {% for field in form %}
-    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-    {{ field }}
-    {% if field.help_text %}
-    <small>{{ field.help_text }}</small>
-    {% endif %}
-    {% for error in field.errors %}
-    <p style="color: #d93025; font-size: 0.875rem; margin-top: 0.25rem;">{{ error }}</p>
-    {% endfor %}
+    <div class="form-group">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}
+      <small>{{ field.help_text }}</small>
+      {% endif %}
+      {% for error in field.errors %}
+      <p style="color: #d93025; font-size: 0.875rem; margin-top: 0.25rem;">{{ error }}</p>
+      {% endfor %}
+    </div>
     {% endfor %}
 
     <button type="submit" class="button button-primary" style="width: 100%; margin-top: 1rem;">Log In</button>

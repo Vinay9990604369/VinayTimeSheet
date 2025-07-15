@@ -20,6 +20,7 @@ urlpatterns = [
 
     # Timesheet Entry
     path('timesheet-entry/', views.timesheet_entry, name='timesheet_entry'),
-    # Note: timesheet_entry_edit removed since not used separately
-    # path('timesheet-entry/<int:entry_id>/', views.timesheet_entry, name='timesheet_entry_edit'),
+
+    # ✅ Add this line to support edit links in the consultant dashboard
+    path('timesheet-entry/edit/<int:entry_id>/', views.timesheet_entry_edit, name='timesheet_entry_edit'),
 ]
