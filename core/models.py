@@ -112,3 +112,10 @@ class TimesheetEntry(models.Model):
     @property
     def consultant_name(self):
         return self.billing_consultant.get_full_name() or self.billing_consultant.username
+
+    @property
+    def billing_hours(self):
+        """Return billing_time_duration as float hours."""
+        if self.billing_time_duration:
+            return self.billing_time_duration.total_seconds() / 3600
+        return 0.0
