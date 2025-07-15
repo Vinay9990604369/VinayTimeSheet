@@ -3,83 +3,82 @@
 {% block title %}Consultant Dashboard{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h2 class="mb-1">Welcome, Billing Consultant!</h2>
+<h2>Welcome, Billing Consultant!</h2>
 
-    <!-- Filter Form -->
-    <form method="get" action="{% url 'core:consultant_dashboard' %}" style="margin-bottom: 1.5rem;">
-      <label for="client">Client:</label>
-      <select id="client" name="client" onchange="this.form.submit()">
-        <option value="">-- All Clients --</option>
-        {% for client in clients %}
-          <option value="{{ client.id }}" {% if client.id|stringformat:"s" == selected_client_id %}selected{% endif %}>
-            {{ client.company_name }}
-          </option>
-        {% endfor %}
-      </select>
+<!-- Filter Form -->
+<form method="get" action="{% url 'core:consultant_dashboard' %}" style="margin-bottom: 1.5rem;">
+  <label for="client">Client:</label>
+  <select id="client" name="client" onchange="this.form.submit()">
+    <option value="">-- All Clients --</option>
+    {% for client in clients %}
+    <option value="{{ client.id }}" {% if client.id|stringformat:"s"==selected_client_id %}selected{% endif %}>
+      {{ client.company_name }}
+    </option>
+    {% endfor %}
+  </select>
 
-      <label for="project">Project:</label>
-      <select id="project" name="project" onchange="this.form.submit()">
-        <option value="">-- All Projects --</option>
-        {% for project in projects %}
-          <option value="{{ project.id }}" {% if project.id|stringformat:"s" == selected_project_id %}selected{% endif %}>
-            {{ project.name }}
-          </option>
-        {% endfor %}
-      </select>
+  <label for="project">Project:</label>
+  <select id="project" name="project" onchange="this.form.submit()">
+    <option value="">-- All Projects --</option>
+    {% for project in projects %}
+    <option value="{{ project.id }}" {% if project.id|stringformat:"s"==selected_project_id %}selected{% endif %}>
+      {{ project.name }}
+    </option>
+    {% endfor %}
+  </select>
 
-      <label for="month">Month:</label>
-      <input type="month" id="month" name="month" value="{{ selected_month }}" onchange="this.form.submit()" />
+  <label for="month">Month:</label>
+  <input type="month" id="month" name="month" value="{{ selected_month }}" onchange="this.form.submit()" />
 
-      <button type="submit">Go</button>
-    </form>
+  <button type="submit">Go</button>
+</form>
 
-    <!-- Timesheet Entries Table -->
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Client ID</th>
-          <th>Project</th>
-          <th>Project ID</th>
-          <th>Service Provider</th>
-          <th>Service Type</th>
-          <th>Phase</th>
-          <th>Billing Consultant</th>
-          <th>Date of Service</th>
-          <th>Last Updated</th>
-          <th>Billing Time Duration (hours)</th>
-          <th>Work Description</th>
-          <th>Comments</th>
-          <th>Edit</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if timesheet_entries %}
-          {% for entry in timesheet_entries %}
-            <tr>
-              <td>{{ entry.client.company_name }}</td>
-              <td>{{ entry.client.client_id }}</td>
-              <td>{{ entry.project.name }}</td>
-              <td>{{ entry.project.project_id }}</td>
-              <td>{{ entry.project.service_provider }}</td>
-              <td>{{ entry.project.service_type }}</td>
-              <td>{{ entry.get_phase_display }}</td>
-              <td>{{ entry.billing_consultant.username }}</td>
-              <td>{{ entry.date_of_service|date:"Y-m-d" }}</td>
-              <td>{{ entry.last_updated|date:"Y-m-d H:i" }}</td>
-              <td>{{ entry.billing_time_duration.total_seconds|floatformat:2|divisibleby_hours }}</td>
-              <td>{{ entry.work_description }}</td>
-              <td>{{ entry.comments }}</td>
-              <td><a href="{% url 'core:timesheet_entry_edit' entry.id %}">Edit</a></td>
-            </tr>
-          {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="14" class="text-center">No entries found.</td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
+<!-- Timesheet Entries Table -->
+<table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Client ID</th>
+      <th>Project</th>
+      <th>Project ID</th>
+      <th>Service Provider</th>
+      <th>Service Type</th>
+      <th>Phase</th>
+      <th>Billing Consultant</th>
+      <th>Date of Service</th>
+      <th>Last Updated</th>
+      <th>Billing Time Duration (hours)</th>
+      <th>Work Description</th>
+      <th>Comments</th>
+      <th>Edit</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if timesheet_entries %}
+    {% for entry in timesheet_entries %}
+    <tr>
+      <td>{{ entry.client.company_name }}</td>
+      <td>{{ entry.client.client_id }}</td>
+      <td>{{ entry.project.name }}</td>
+      <td>{{ entry.project.project_id }}</td>
+      <td>{{ entry.project.service_provider }}</td>
+      <td>{{ entry.project.service_type }}</td>
+      <td>{{ entry.phase }}</td>
+      <td>{{ entry.billing_consultant.username }}</td>
+      <td>{{ entry.date_of_service|date:"Y-m-d" }}</td>
+      <td>{{ entry.last_updated|date:"Y-m-d H:i" }}</td>
+      <td>{{ entry.billing_hours|floatformat:1 }}</td>
+      <td>{{ entry.work_description }}</td>
+      <td>{{ entry.comments }}</td>
+      <td><a href="{% url 'core:timesheet_entry_edit' entry.id %}">Edit</a></td>
+    </tr>
+    {% endfor %}
+    {% else %}
+    <tr>
+      <td colspan="14" style="text-align:center;">No entries found.</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+
 {% endblock %}
